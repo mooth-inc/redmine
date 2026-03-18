@@ -8,12 +8,6 @@ variable "region" {
   default = "asia-northeast1"
 }
 
-variable "domain" {
-  type        = string
-  default     = ""
-  description = "Domain name (e.g. redmine.example.com). Empty = HTTP only. Set to enable HTTPS, DNS, and redirect."
-}
-
 variable "image" {
   type        = string
   description = "Docker image URL for Redmine (e.g. asia-northeast1-docker.pkg.dev/PROJECT/redmine/redmine:latest)"
@@ -49,4 +43,14 @@ variable "sleep_schedule" {
   type        = string
   default     = "0 20 * * 1-5"
   description = "Cron schedule to set min-instances=0 (Asia/Tokyo)"
+}
+
+variable "iap_support_email" {
+  type        = string
+  description = "Support email for IAP consent screen"
+}
+
+variable "iap_allowed_members" {
+  type        = list(string)
+  description = "List of IAM members allowed to access Redmine via IAP (e.g. [\"user:alice@example.com\"])"
 }

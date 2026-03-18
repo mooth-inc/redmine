@@ -30,8 +30,7 @@ resource "google_project_service" "apis" {
     "sqladmin.googleapis.com",
     "secretmanager.googleapis.com",
     "cloudscheduler.googleapis.com",
-    "compute.googleapis.com",
-    "dns.googleapis.com",
+    "iap.googleapis.com",
     "artifactregistry.googleapis.com",
   ])
 
@@ -144,6 +143,7 @@ module "cloud_run" {
   gcs_bucket_name           = module.gcs.bucket_name
   gcs_access_key_secret     = google_secret_manager_secret.secrets["redmine-gcs-access-key"].secret_id
   gcs_secret_key_secret     = google_secret_manager_secret.secrets["redmine-gcs-secret-key"].secret_id
+  iap_allowed_members       = var.iap_allowed_members
 
   depends_on = [
     google_project_service.apis["run.googleapis.com"],
@@ -153,24 +153,17 @@ module "cloud_run" {
   ]
 }
 
-module "load_balancer" {
-  source = "./modules/load_balancer"
+# ---------- IAP ----------
 
-  region       = var.region
-  domain       = var.domain
-  service_name = module.cloud_run.service_name
-
-  depends_on = [google_project_service.apis["compute.googleapis.com"]]
+resource "google_iap_brand" "redmine" {
+  support_email     = var.iap_support_email
+  application_title = "Redmine"
+  project           = var.project_id
 }
 
-module "dns" {
-  source = "./modules/dns"
-  count  = var.domain != "" ? 1 : 0
-
-  domain     = var.domain
-  ip_address = module.load_balancer.static_ip_address
-
-  depends_on = [google_project_service.apis["dns.googleapis.com"]]
+resource "google_iap_client" "redmine" {
+  display_name = "Redmine IAP Client"
+  brand        = google_iap_brand.redmine.name
 }
 
 module "scheduler" {

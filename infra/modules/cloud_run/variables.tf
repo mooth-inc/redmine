@@ -57,3 +57,8 @@ variable "gcs_access_key_secret" {
 variable "gcs_secret_key_secret" {
   type = string
 }
+
+variable "iap_allowed_members" {
+  type        = list(string)
+  description = "List of IAM members allowed to invoke the Cloud Run service via IAP"
+}

@@ -1,7 +1,7 @@
 resource "google_cloud_run_v2_service" "redmine" {
   name     = "redmine"
   location = var.region
-  ingress  = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
+  ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
     service_account = var.service_account_email
@@ -110,9 +110,9 @@ resource "google_cloud_run_v2_service" "redmine" {
   }
 }
 
-resource "google_cloud_run_v2_service_iam_member" "public" {
+resource "google_cloud_run_v2_service_iam_binding" "iap_invoker" {
   name     = google_cloud_run_v2_service.redmine.name
   location = var.region
   role     = "roles/run.invoker"
-  member   = "allUsers"
+  members  = var.iap_allowed_members
 }

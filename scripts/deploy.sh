@@ -27,11 +27,4 @@ terraform apply -var="image=${IMAGE}"
 echo ""
 echo "==> Deployment complete!"
 echo ""
-terraform output access_url
-
-DOMAIN=$(terraform output -raw access_url 2>/dev/null || true)
-if echo "${DOMAIN}" | grep -q "https://"; then
-  echo ""
-  echo "DNS Nameservers (update your domain registrar):"
-  terraform output dns_nameservers
-fi
+terraform output service_url

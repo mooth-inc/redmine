@@ -60,4 +60,4 @@ output: ## Show Terraform outputs
 	cd infra && terraform output
 
 url: ## Show access URL
-	@cd infra && terraform output access_url
+	@cd infra && terraform output service_url

@@ -1,19 +1,15 @@
 # Redmine on Cloud Run
 
-Run Redmine 5.1.x on Google Cloud Run with Global HTTP(S) Load Balancer, Cloud SQL (PostgreSQL), GCS (attachments), and Cloud Scheduler (cold start mitigation), all managed by Terraform.
+Run Redmine 5.1.x on Google Cloud Run with IAP authentication, Cloud SQL (PostgreSQL), GCS (attachments), and Cloud Scheduler (cold start mitigation), all managed by Terraform.
 
 ## Architecture
 
 ```
-Internet → Global Static IP → Cloud Load Balancing
-  ├── HTTP (port 80)  → [no domain] Backend Service → Cloud Run
-  │                    → [with domain] 301 → HTTPS
-  └── HTTPS (port 443) → [with domain] Managed SSL → Backend Service → Cloud Run
-        Cloud Run → Cloud SQL (Unix socket via Cloud SQL volume)
-                  → GCS (S3-compatible API)
-                  → Secret Manager
+Internet → IAP Authentication → Cloud Run (*.run.app)
+  Cloud Run → Cloud SQL (Unix socket via Cloud SQL volume)
+            → GCS (S3-compatible API)
+            → Secret Manager
   Cloud Scheduler → min-instances toggle (warmup/sleep)
-  Cloud DNS → [with domain] A record → Static IP
 ```
 
 ## Prerequisites
@@ -37,7 +33,7 @@ echo -n 'YOUR_GCS_SECRET_KEY' | gcloud secrets versions add redmine-gcs-secret-k
 
 # 3. Configure terraform.tfvars
 cp infra/terraform.tfvars.example infra/terraform.tfvars
-# Edit infra/terraform.tfvars with your project_id and image URL
+# Edit infra/terraform.tfvars with your project_id, image, iap_support_email, and iap_allowed_members
 
 # 4. Initialize Terraform and deploy
 make init PROJECT_ID=<project-id>
@@ -70,6 +66,39 @@ Override variables via the command line:
 
 ```bash
 make deploy PROJECT_ID=my-project REGION=us-central1
+```
+
+## IAP Access
+
+Access is controlled by Identity-Aware Proxy (IAP). Only members listed in `iap_allowed_members` can access the application.
+
+Configure allowed members in `terraform.tfvars`:
+
+```hcl
+iap_allowed_members = [
+  "user:alice@example.com",
+  "user:bob@example.com",
+  "group:team@example.com",
+]
+```
+
+After deployment, access Redmine at the Cloud Run service URL:
+
+```bash
+make url
+```
+
+## Custom Domain
+
+To use a custom domain, add a Cloud Run domain mapping manually (not managed by Terraform):
+
+```bash
+gcloud run domain-mappings create \
+  --service=redmine \
+  --domain=redmine.example.com \
+  --region=asia-northeast1
+
+# Follow the DNS verification instructions printed by the command
 ```
 
 ## Secret Registration
@@ -113,26 +142,6 @@ make plan  PROJECT_ID=<project-id>   # Preview changes
 make apply PROJECT_ID=<project-id>   # Apply changes
 ```
 
-## HTTP-only Access (No Domain)
-
-Set `domain = ""` in `terraform.tfvars` (default). Access via `http://<static-ip>`.
-
-```bash
-make output
-```
-
-## Enabling HTTPS + DNS
-
-1. Set `domain = "redmine.example.com"` in `terraform.tfvars`
-2. Run `make apply PROJECT_ID=<project-id>`
-3. Update NS records at your domain registrar:
-   ```bash
-   cd infra && terraform output dns_nameservers
-   ```
-4. Wait for DNS propagation and SSL certificate provisioning
-
-> **Note**: Google Managed SSL Certificate provisioning takes 15-60 minutes after DNS propagation. During this time, HTTPS access will show a certificate error. HTTP access will redirect to HTTPS with a 301 status.
-
 ## Cost Estimate
 
 | Resource | Monthly Cost |
@@ -140,9 +149,7 @@ make output
 | Cloud Run | ~$1-3 |
 | Cloud SQL (db-f1-micro) | ~$8-10 |
 | GCS | ~$0.5 |
-| Global LB forwarding rule | ~$18 (fixed) |
-| LB data processing | ~$1-2 |
-| **Total** | **~$30-38/month** |
+| **Total** | **~$10-14/month** |
 
 ## Scheduler Verification
 
@@ -161,13 +168,11 @@ gcloud run services describe redmine --region=asia-northeast1 --format='value(sp
 
 ## Troubleshooting
 
-### Cloud Run returns 403
-Cloud Run ingress is set to `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER`. Direct access to `*.run.app` is blocked by design. Access through the Load Balancer IP or domain.
-
-### SSL certificate stuck in PROVISIONING
-- Verify DNS A record points to the static IP: `dig redmine.example.com`
-- Verify NS records at registrar match `terraform output dns_nameservers`
-- SSL provisioning can take 15-60 minutes after DNS is correct
+### IAP returns 403
+Verify the user is included in `iap_allowed_members` in `terraform.tfvars` and re-apply:
+```bash
+make apply PROJECT_ID=<project-id>
+```
 
 ### Cold start is slow
 Cloud Scheduler sets `min-instances=1` at 08:00 JST on weekdays. Check:
@@ -183,3 +188,9 @@ gcloud scheduler jobs describe redmine-warmup --location=asia-northeast1
 ### Attachments not uploading
 - Verify GCS interoperability keys are registered in Secret Manager
 - Check bucket exists: `gcloud storage ls gs://<project-id>-redmine-attachments`
+
+### `terraform destroy` fails for IAP brand
+`google_iap_brand` may not be deletable via API. If `terraform destroy` fails, manually delete the brand in the Cloud Console (Security → Identity-Aware Proxy) or remove it from state:
+```bash
+terraform state rm google_iap_brand.redmine
+```

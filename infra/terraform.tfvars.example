@@ -1,12 +1,8 @@
 project_id = "your-project-id"
 region     = "asia-northeast1"
-image      = "asia-northeast1-docker.pkg.dev/your-project-id/redmine/redmine:latest"
 
-# HTTP only (IP direct access)
-domain = ""
-
-# To enable HTTPS + DNS, uncomment:
-# domain = "redmine.example.com"
+iap_support_email   = "admin@example.com"
+iap_allowed_members = ["user:admin@example.com"]
 
 db_tier                = "db-f1-micro"
 cloudrun_cpu           = "1"
