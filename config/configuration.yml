@@ -1,0 +1,7 @@
+production:
+  attachments_storage: s3
+  s3_endpoint: storage.googleapis.com
+  s3_bucket: <%= ENV['GCS_BUCKET_NAME'] %>
+  s3_access_key_id: <%= ENV['GCS_ACCESS_KEY_ID'] %>
+  s3_secret_access_key: <%= ENV['GCS_SECRET_ACCESS_KEY'] %>
+  s3_region: asia-northeast1

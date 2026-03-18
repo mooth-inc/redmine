@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: redmine
+      POSTGRES_USER: redmine
+      POSTGRES_PASSWORD: redmine
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  redmine:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      RAILS_ENV: development
+      DB_HOST: db
+      DB_NAME: redmine
+      DB_USER: redmine
+      DB_PASSWORD: redmine
+
+volumes:
+  db-data:
