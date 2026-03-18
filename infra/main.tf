@@ -83,10 +83,10 @@ resource "google_service_account_iam_member" "scheduler_act_as_self" {
 
 locals {
   secrets = {
-    "redmine-db-password"       = "Database password for Redmine"
-    "redmine-secret-key-base"   = "Rails secret key base"
-    "redmine-gcs-access-key"    = "GCS interoperability access key"
-    "redmine-gcs-secret-key"    = "GCS interoperability secret key"
+    "redmine-db-password"     = "Database password for Redmine"
+    "redmine-secret-key-base" = "Rails secret key base"
+    "redmine-gcs-access-key"  = "GCS interoperability access key"
+    "redmine-gcs-secret-key"  = "GCS interoperability secret key"
   }
 }
 
@@ -176,11 +176,11 @@ module "dns" {
 module "scheduler" {
   source = "./modules/scheduler"
 
-  project_id             = var.project_id
-  region                 = var.region
-  warmup_schedule        = var.warmup_schedule
-  sleep_schedule         = var.sleep_schedule
-  scheduler_sa_email     = google_service_account.scheduler.email
+  project_id         = var.project_id
+  region             = var.region
+  warmup_schedule    = var.warmup_schedule
+  sleep_schedule     = var.sleep_schedule
+  scheduler_sa_email = google_service_account.scheduler.email
 
   depends_on = [
     google_project_service.apis["cloudscheduler.googleapis.com"],

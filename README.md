@@ -1,19 +1,19 @@
 # Redmine on Cloud Run
 
-Redmine 5.1.x を Google Cloud Run 上で稼働させる構成。Global HTTP(S) Load Balancer、Cloud SQL (PostgreSQL)、GCS (添付ファイル)、Cloud Scheduler (コールドスタート対策) を Terraform で管理。
+Run Redmine 5.1.x on Google Cloud Run with Global HTTP(S) Load Balancer, Cloud SQL (PostgreSQL), GCS (attachments), and Cloud Scheduler (cold start mitigation), all managed by Terraform.
 
 ## Architecture
 
 ```
 Internet → Global Static IP → Cloud Load Balancing
-  ├── HTTP (port 80)  → [domain未設定] Backend Service → Cloud Run
-  │                    → [domain設定時] 301 → HTTPS
-  └── HTTPS (port 443) → [domain設定時のみ] Managed SSL → Backend Service → Cloud Run
+  ├── HTTP (port 80)  → [no domain] Backend Service → Cloud Run
+  │                    → [with domain] 301 → HTTPS
+  └── HTTPS (port 443) → [with domain] Managed SSL → Backend Service → Cloud Run
         Cloud Run → Cloud SQL (Unix socket via Cloud SQL volume)
                   → GCS (S3-compatible API)
                   → Secret Manager
   Cloud Scheduler → min-instances toggle (warmup/sleep)
-  Cloud DNS → [domain設定時のみ] A record → Static IP
+  Cloud DNS → [with domain] A record → Static IP
 ```
 
 ## Prerequisites
@@ -21,12 +21,13 @@ Internet → Global Static IP → Cloud Load Balancing
 - Google Cloud SDK (`gcloud`)
 - Terraform >= 1.5
 - Docker
+- GNU Make
 
-## Setup
+## Quick Start
 
 ```bash
 # 1. Initial GCP setup (state bucket + Artifact Registry)
-./scripts/setup.sh <project-id>
+make setup PROJECT_ID=<project-id>
 
 # 2. Register secrets
 echo -n 'YOUR_DB_PASSWORD' | gcloud secrets versions add redmine-db-password --data-file=-
@@ -37,6 +38,38 @@ echo -n 'YOUR_GCS_SECRET_KEY' | gcloud secrets versions add redmine-gcs-secret-k
 # 3. Configure terraform.tfvars
 cp infra/terraform.tfvars.example infra/terraform.tfvars
 # Edit infra/terraform.tfvars with your project_id and image URL
+
+# 4. Initialize Terraform and deploy
+make init PROJECT_ID=<project-id>
+make deploy PROJECT_ID=<project-id>
+```
+
+## Make Targets
+
+Run `make help` to list all targets.
+
+| Target | Description |
+|--------|-------------|
+| `make up` | Start local Redmine with docker-compose |
+| `make down` | Stop local Redmine |
+| `make logs` | Tail Redmine container logs |
+| `make build` | Build Docker image |
+| `make push` | Push image to Artifact Registry |
+| `make init` | Initialize Terraform backend |
+| `make plan` | Preview infrastructure changes |
+| `make apply` | Apply infrastructure changes |
+| `make destroy` | Destroy infrastructure |
+| `make validate` | Validate Terraform config |
+| `make fmt` | Format Terraform files |
+| `make deploy` | Full deploy (build + push + apply) |
+| `make setup` | Run initial GCP setup |
+| `make output` | Show Terraform outputs |
+| `make url` | Show access URL |
+
+Override variables via the command line:
+
+```bash
+make deploy PROJECT_ID=my-project REGION=us-central1
 ```
 
 ## Secret Registration
@@ -55,29 +88,29 @@ GCS interoperability keys: Cloud Console → Cloud Storage → Settings → Inte
 ## Local Development
 
 ```bash
-docker-compose up
+make up
 # Access at http://localhost:3000
 # Default login: admin / admin
+
+make logs   # Tail logs
+make down   # Stop
 ```
 
 ## Deploy
 
 ```bash
-./scripts/deploy.sh <project-id>
+make deploy PROJECT_ID=<project-id>
 ```
 
-Or manually:
+This runs `build` → `push` → `apply` in sequence.
+
+To run each step individually:
 
 ```bash
-# Build and push
-IMAGE="asia-northeast1-docker.pkg.dev/<project-id>/redmine/redmine:latest"
-docker build -t $IMAGE .
-docker push $IMAGE
-
-# Terraform
-cd infra
-terraform init -backend-config="bucket=<project-id>-redmine-tfstate"
-terraform apply -var="image=$IMAGE"
+make build PROJECT_ID=<project-id>
+make push  PROJECT_ID=<project-id>
+make plan  PROJECT_ID=<project-id>   # Preview changes
+make apply PROJECT_ID=<project-id>   # Apply changes
 ```
 
 ## HTTP-only Access (No Domain)
@@ -85,16 +118,16 @@ terraform apply -var="image=$IMAGE"
 Set `domain = ""` in `terraform.tfvars` (default). Access via `http://<static-ip>`.
 
 ```bash
-terraform output static_ip_address
+make output
 ```
 
 ## Enabling HTTPS + DNS
 
 1. Set `domain = "redmine.example.com"` in `terraform.tfvars`
-2. Run `terraform apply`
+2. Run `make apply PROJECT_ID=<project-id>`
 3. Update NS records at your domain registrar:
    ```bash
-   terraform output dns_nameservers
+   cd infra && terraform output dns_nameservers
    ```
 4. Wait for DNS propagation and SSL certificate provisioning
 
