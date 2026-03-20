@@ -58,6 +58,18 @@ variable "gcs_secret_key_secret" {
   type = string
 }
 
+variable "smtp_domain_secret" {
+  type = string
+}
+
+variable "smtp_user_secret" {
+  type = string
+}
+
+variable "smtp_password_secret" {
+  type = string
+}
+
 variable "iap_allowed_members" {
   type        = list(string)
   description = "List of IAM members allowed to invoke the Cloud Run service via IAP"

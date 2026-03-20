@@ -86,6 +86,9 @@ locals {
     "redmine-secret-key-base" = "Rails secret key base"
     "redmine-gcs-access-key"  = "GCS interoperability access key"
     "redmine-gcs-secret-key"  = "GCS interoperability secret key"
+    "redmine-smtp-domain"     = "SMTP domain for email delivery"
+    "redmine-smtp-user"       = "SMTP user for email delivery"
+    "redmine-smtp-password"   = "SMTP password for email delivery"
   }
 }
 
@@ -143,6 +146,9 @@ module "cloud_run" {
   gcs_bucket_name           = module.gcs.bucket_name
   gcs_access_key_secret     = google_secret_manager_secret.secrets["redmine-gcs-access-key"].secret_id
   gcs_secret_key_secret     = google_secret_manager_secret.secrets["redmine-gcs-secret-key"].secret_id
+  smtp_domain_secret        = google_secret_manager_secret.secrets["redmine-smtp-domain"].secret_id
+  smtp_user_secret          = google_secret_manager_secret.secrets["redmine-smtp-user"].secret_id
+  smtp_password_secret      = google_secret_manager_secret.secrets["redmine-smtp-password"].secret_id
   iap_allowed_members       = var.iap_allowed_members
 
   depends_on = [

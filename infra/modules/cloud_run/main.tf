@@ -99,6 +99,33 @@ resource "google_cloud_run_v2_service" "redmine" {
           }
         }
       }
+      env {
+        name = "SMTP_DOMAIN"
+        value_source {
+          secret_key_ref {
+            secret  = var.smtp_domain_secret
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name = "SMTP_USER"
+        value_source {
+          secret_key_ref {
+            secret  = var.smtp_user_secret
+            version = "latest"
+          }
+        }
+      }
+      env {
+        name = "SMTP_PASSWORD"
+        value_source {
+          secret_key_ref {
+            secret  = var.smtp_password_secret
+            version = "latest"
+          }
+        }
+      }
 
       startup_probe {
         http_get {

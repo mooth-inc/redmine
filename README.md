@@ -30,6 +30,7 @@ echo -n 'YOUR_DB_PASSWORD' | gcloud secrets versions add redmine-db-password --d
 echo -n 'YOUR_SECRET_KEY_BASE' | gcloud secrets versions add redmine-secret-key-base --data-file=-
 echo -n 'YOUR_GCS_ACCESS_KEY' | gcloud secrets versions add redmine-gcs-access-key --data-file=-
 echo -n 'YOUR_GCS_SECRET_KEY' | gcloud secrets versions add redmine-gcs-secret-key --data-file=-
+make secret-smtp  # Register SMTP secrets interactively
 
 # 3. Configure terraform.tfvars
 cp infra/terraform.tfvars.example infra/terraform.tfvars
@@ -58,6 +59,7 @@ Run `make help` to list all targets.
 | `make validate` | Validate Terraform config |
 | `make fmt` | Format Terraform files |
 | `make deploy` | Full deploy (build + push + apply) |
+| `make secret-smtp` | Register SMTP secrets in Secret Manager |
 | `make setup` | Run initial GCP setup |
 | `make output` | Show Terraform outputs |
 | `make url` | Show access URL |
@@ -67,6 +69,28 @@ Override variables via the command line:
 ```bash
 make deploy PROJECT_ID=my-project REGION=us-central1
 ```
+
+## Security Notes
+
+Cloud Run `ingress` is currently set to `INGRESS_TRAFFIC_ALL` to allow IAP-authenticated access without a Load Balancer. This means the Cloud Run service URL is publicly reachable. While IAP enforces authentication, direct access to the Cloud Run URL could allow HTTP header spoofing (e.g., `X-Forwarded-User`).
+
+For stricter security, consider adding a Cloud Load Balancer and changing ingress to `INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER`. See [Cloud Run ingress settings](https://cloud.google.com/run/docs/securing/ingress) for details.
+
+## Plugins
+
+### redmine_header_auth
+
+HTTP header authentication plugin for automatic login via IAP-authenticated user identity. Added as a Git submodule.
+
+After cloning, initialize the submodule:
+
+```bash
+git submodule update --init
+```
+
+Plugin migrations run automatically on container startup via `docker-entrypoint-custom.sh`.
+
+To configure the plugin, go to **Administration > Plugins > Http Header Auth plugin > Configure** in the Redmine admin panel.
 
 ## IAP Access
 
@@ -111,15 +135,24 @@ Terraform creates the Secret Manager secret resources, but values must be regist
 | `redmine-secret-key-base` | Rails secret key base (`openssl rand -hex 64`) |
 | `redmine-gcs-access-key` | GCS interoperability access key |
 | `redmine-gcs-secret-key` | GCS interoperability secret key |
+| `redmine-smtp-domain` | SMTP domain for email delivery |
+| `redmine-smtp-user` | SMTP user for email delivery |
+| `redmine-smtp-password` | SMTP password for email delivery |
 
 GCS interoperability keys: Cloud Console → Cloud Storage → Settings → Interoperability → Create a key.
+
+Register SMTP secrets interactively:
+
+```bash
+make secret-smtp
+```
 
 ## Local Development
 
 ```bash
 make up
-# Access at http://localhost:3000
-# Default login: admin / admin
+# Redmine: http://localhost:3000 (default login: admin / admin)
+# Mailpit: http://localhost:8025 (captures all outgoing emails)
 
 make logs   # Tail logs
 make down   # Stop

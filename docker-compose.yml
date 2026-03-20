@@ -8,18 +8,30 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
 
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
   redmine:
     build: .
     ports:
       - "3000:3000"
     depends_on:
       - db
+      - mailpit
     environment:
       RAILS_ENV: production
       DB_HOST: db
       DB_NAME: redmine
       DB_USER: redmine
       DB_PASSWORD: redmine
+      SMTP_ADDRESS: mailpit
+      SMTP_PORT: "1025"
+      SMTP_DOMAIN: localhost
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
 
 volumes:
   db-data:

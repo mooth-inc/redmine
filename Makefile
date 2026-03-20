@@ -3,7 +3,7 @@ REGION     ?= asia-northeast1
 IMAGE      ?= $(REGION)-docker.pkg.dev/$(PROJECT_ID)/redmine/redmine:latest
 BUCKET     ?= $(PROJECT_ID)-redmine-tfstate
 
-.PHONY: help up down logs build push init plan apply destroy validate fmt deploy setup output url
+.PHONY: help up down logs build push init plan apply destroy validate fmt deploy setup output url secret-smtp
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -53,6 +53,13 @@ deploy: build push apply ## Full deploy (build + push + apply)
 
 setup: ## Run GCP initial setup
 	./scripts/setup.sh $(PROJECT_ID) $(REGION)
+
+# --- Secrets ---
+
+secret-smtp: ## Register SMTP secrets in Secret Manager
+	@echo "Enter SMTP domain:"; read val; echo -n "$$val" | gcloud secrets versions add redmine-smtp-domain --data-file=-
+	@echo "Enter SMTP user:"; read val; echo -n "$$val" | gcloud secrets versions add redmine-smtp-user --data-file=-
+	@echo "Enter SMTP password:"; read val; echo -n "$$val" | gcloud secrets versions add redmine-smtp-password --data-file=-
 
 # --- Info ---
 

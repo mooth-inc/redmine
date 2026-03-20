@@ -1,0 +1,3 @@
+[submodule "plugins/redmine_header_auth"]
+	path = plugins/redmine_header_auth
+	url = https://github.com/dobassy/redmine-plugin-httpheader-auth.git
