@@ -26,7 +26,7 @@ logs: ## Show Redmine logs
 # --- Docker ---
 
 build: ## Build Docker image
-	docker build -t $(IMAGE) .
+	docker build --platform linux/amd64 -t $(IMAGE) .
 
 push: ## Push image to Artifact Registry
 	docker push $(IMAGE)

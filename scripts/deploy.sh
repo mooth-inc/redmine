@@ -12,7 +12,7 @@ IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/redmine/redmine:latest"
 BUCKET_NAME="${PROJECT_ID}-redmine-tfstate"
 
 echo "==> Building Docker image"
-docker build -t "${IMAGE}" .
+docker build --platform linux/amd64 -t "${IMAGE}" .
 
 echo "==> Pushing to Artifact Registry"
 docker push "${IMAGE}"
