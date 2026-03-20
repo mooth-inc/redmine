@@ -84,15 +84,33 @@ For stricter security, consider adding a Cloud Load Balancer and changing ingres
 
 HTTP header authentication plugin for automatic login via IAP-authenticated user identity. Added as a Git submodule.
 
-After cloning, initialize the submodule:
+Plugin migrations run automatically on container startup via `docker-entrypoint-custom.sh`.
+
+To configure the plugin, go to **Administration > Plugins > Http Header Auth plugin > Configure** in the Redmine admin panel.
+
+### redmine_omniauth_google
+
+Google OAuth plugin for Redmine 5.x. Allows users to log in with their Google account and auto-registers new users.
+
+Added as a Git submodule from [mosa11aei/redmine5.x-google-oauth](https://github.com/mosa11aei/redmine5.x-google-oauth).
+
+After cloning, initialize submodules:
 
 ```bash
 git submodule update --init
 ```
 
-Plugin migrations run automatically on container startup via `docker-entrypoint-custom.sh`.
+#### Setup
 
-To configure the plugin, go to **Administration > Plugins > Http Header Auth plugin > Configure** in the Redmine admin panel.
+1. Create an OAuth 2.0 Client ID in [GCP Console > APIs & Services > Credentials](https://console.cloud.google.com/apis/credentials)
+   - Application type: Web application
+   - Authorized redirect URI: `https://<your-redmine-domain>/oauth2callback`
+2. Deploy the updated Docker image
+3. In Redmine, go to **Administration > Plugins > Redmine Omniauth Google > Configure**
+   - Enter Client ID and Client Secret
+   - Enable "Oauth authentication"
+   - (Optional) Set allowed email domain
+4. Go to **Administration > Settings > Authentication** and enable self-registration (for auto-registration of new users)
 
 ## IAP Access
 

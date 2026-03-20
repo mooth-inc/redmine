@@ -11,6 +11,10 @@ ENV RAILS_ENV=production \
     REDMINE_LANG=ja \
     TZ=Asia/Tokyo
 
+# Plugins
+COPY plugins/ /usr/src/redmine/plugins/
+RUN cd /usr/src/redmine && bundle install --without development test
+
 COPY config/database.yml /usr/src/redmine/config/database.yml
 COPY config/configuration.yml /usr/src/redmine/config/configuration.yml
 COPY config/initializers/default_language.rb /usr/src/redmine/config/initializers/default_language.rb
