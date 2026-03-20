@@ -1,9 +1,13 @@
-PROJECT_ID ?= your-project-id
+PROJECT_ID ?= $(shell gcloud config get project 2>/dev/null)
 REGION     ?= asia-northeast1
 IMAGE      ?= $(REGION)-docker.pkg.dev/$(PROJECT_ID)/redmine/redmine:latest
 BUCKET     ?= $(PROJECT_ID)-redmine-tfstate
 
-.PHONY: help up down logs build push init plan apply destroy validate fmt deploy setup output url secret-smtp
+ifndef PROJECT_ID
+$(error PROJECT_ID is not set. Run 'gcloud config set project <id>' or pass PROJECT_ID=<id>)
+endif
+
+.PHONY: help up down logs build push init plan apply destroy validate fmt deploy setup output url secret-init secret-smtp
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -55,6 +59,9 @@ setup: ## Run GCP initial setup
 	./scripts/setup.sh $(PROJECT_ID) $(REGION)
 
 # --- Secrets ---
+
+secret-init: ## Auto-register secrets (DB password, secret key, GCS keys)
+	./scripts/secret-init.sh $(PROJECT_ID)
 
 secret-smtp: ## Register SMTP secrets in Secret Manager
 	@echo "Enter SMTP domain:"; read val; echo -n "$$val" | gcloud secrets versions add redmine-smtp-domain --data-file=-
