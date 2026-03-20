@@ -8,7 +8,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 6.0"
+      version = "~> 7.21"
     }
     random = {
       source  = "hashicorp/random"
@@ -21,6 +21,8 @@ provider "google" {
   project = var.project_id
   region  = var.region
 }
+
+data "google_project" "current" {}
 
 # ---------- API Enablement ----------
 
@@ -150,6 +152,7 @@ module "cloud_run" {
   smtp_user_secret          = google_secret_manager_secret.secrets["redmine-smtp-user"].secret_id
   smtp_password_secret      = google_secret_manager_secret.secrets["redmine-smtp-password"].secret_id
   iap_allowed_members       = var.iap_allowed_members
+  project_number            = data.google_project.current.number
 
   depends_on = [
     google_project_service.apis["run.googleapis.com"],
@@ -159,7 +162,7 @@ module "cloud_run" {
   ]
 }
 
-# ---------- IAP ----------
+# ---------- Scheduler ----------
 
 module "scheduler" {
   source = "./modules/scheduler"

@@ -1,8 +1,9 @@
 resource "google_cloud_run_v2_service" "redmine" {
-  name     = "redmine"
-  location = var.region
+  name                = "redmine"
+  location            = var.region
   ingress             = "INGRESS_TRAFFIC_ALL"
   deletion_protection = false
+  iap_enabled         = true
 
   template {
     service_account = var.service_account_email
@@ -142,9 +143,34 @@ resource "google_cloud_run_v2_service" "redmine" {
   }
 }
 
-resource "google_cloud_run_v2_service_iam_binding" "iap_invoker" {
+# IAP service agent needs run.invoker to forward authenticated requests
+resource "google_cloud_run_v2_service_iam_member" "iap_service_agent" {
   name     = google_cloud_run_v2_service.redmine.name
   location = var.region
   role     = "roles/run.invoker"
-  members  = var.iap_allowed_members
+  member   = "serviceAccount:service-${var.project_number}@gcp-sa-iap.iam.gserviceaccount.com"
+}
+
+# Workaround: google_iap_web_cloud_run_service_iam_binding has a known bug (#23092)
+# where bindings apply successfully but don't take effect at the IAP layer.
+resource "terraform_data" "iap_access_binding" {
+  triggers_replace = [
+    google_cloud_run_v2_service.redmine.name,
+    join(",", var.iap_allowed_members),
+  ]
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      for MEMBER in ${join(" ", var.iap_allowed_members)}; do
+        gcloud beta iap web add-iam-policy-binding \
+          --project=${var.project_id} \
+          --resource-type=cloud-run \
+          --service=${google_cloud_run_v2_service.redmine.name} \
+          --region=${var.region} \
+          --member="$MEMBER" \
+          --role="roles/iap.httpsResourceAccessor" \
+          --quiet
+      done
+    EOT
+  }
 }

@@ -74,3 +74,8 @@ variable "iap_allowed_members" {
   type        = list(string)
   description = "List of IAM members allowed to invoke the Cloud Run service via IAP (e.g. user:, group:, domain:)"
 }
+
+variable "project_number" {
+  type        = string
+  description = "GCP project number (used for IAP service agent email)"
+}
