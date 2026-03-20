@@ -1,7 +1,10 @@
 FROM redmine:5.1-alpine
 
 # Install timezone data and build dependencies for plugins
-RUN apk add --no-cache tzdata build-base
+RUN sed -i 's|https://|http://|' /etc/apk/repositories && \
+    apk add --no-cache tzdata build-base ca-certificates && \
+    update-ca-certificates && \
+    sed -i 's|http://|https://|' /etc/apk/repositories
 
 # Default environment (RAILS_ENV is also set in Cloud Run for consistency)
 ENV RAILS_ENV=production \
