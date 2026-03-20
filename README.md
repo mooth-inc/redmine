@@ -27,7 +27,7 @@ make setup PROJECT_ID=<project-id>
 
 # 2. Configure terraform.tfvars
 cp infra/terraform.tfvars.example infra/terraform.tfvars
-# Edit infra/terraform.tfvars with your project_id, image, iap_support_email, and iap_allowed_members
+# Edit infra/terraform.tfvars with your project_id, image, and iap_allowed_members
 
 # 3. Build image and provision infrastructure
 make init PROJECT_ID=<project-id>
@@ -232,8 +232,3 @@ gcloud scheduler jobs describe redmine-warmup --location=asia-northeast1
 - Verify GCS interoperability keys are registered in Secret Manager
 - Check bucket exists: `gcloud storage ls gs://<project-id>-redmine-attachments`
 
-### `terraform destroy` fails for IAP brand
-`google_iap_brand` may not be deletable via API. If `terraform destroy` fails, manually delete the brand in the Cloud Console (Security → Identity-Aware Proxy) or remove it from state:
-```bash
-terraform state rm google_iap_brand.redmine
-```

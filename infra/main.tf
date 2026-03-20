@@ -161,17 +161,6 @@ module "cloud_run" {
 
 # ---------- IAP ----------
 
-resource "google_iap_brand" "redmine" {
-  support_email     = var.iap_support_email
-  application_title = "Redmine"
-  project           = var.project_id
-}
-
-resource "google_iap_client" "redmine" {
-  display_name = "Redmine IAP Client"
-  brand        = google_iap_brand.redmine.name
-}
-
 module "scheduler" {
   source = "./modules/scheduler"
 

@@ -1,7 +1,6 @@
 project_id = "your-project-id"
 region     = "asia-northeast1"
 
-iap_support_email   = "admin@example.com"
 iap_allowed_members = ["user:admin@example.com", "domain:example.com"]
 
 db_tier                = "db-f1-micro"

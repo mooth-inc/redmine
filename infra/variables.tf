@@ -45,11 +45,6 @@ variable "sleep_schedule" {
   description = "Cron schedule to set min-instances=0 (Asia/Tokyo)"
 }
 
-variable "iap_support_email" {
-  type        = string
-  description = "Support email for IAP consent screen"
-}
-
 variable "iap_allowed_members" {
   type        = list(string)
   description = "List of IAM members allowed to access Redmine via IAP (e.g. [\"user:alice@example.com\", \"domain:example.com\"])"
