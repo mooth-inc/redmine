@@ -13,7 +13,6 @@ ENV RAILS_ENV=production \
 
 COPY config/database.yml /usr/src/redmine/config/database.yml
 COPY config/configuration.yml /usr/src/redmine/config/configuration.yml
-COPY plugins/redmine_header_auth /usr/src/redmine/plugins/redmine_header_auth
 COPY docker-entrypoint-custom.sh /docker-entrypoint-custom.sh
 RUN chmod +x /docker-entrypoint-custom.sh
 
