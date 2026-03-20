@@ -7,10 +7,10 @@ ifndef PROJECT_ID
 $(error PROJECT_ID is not set. Run 'gcloud config set project <id>' or pass PROJECT_ID=<id>)
 endif
 
-.PHONY: help up down logs build push init plan apply destroy validate fmt deploy setup output url secret-init secret-smtp
+.PHONY: help up down logs build push tf-init tf-plan tf-apply tf-destroy tf-validate tf-fmt update-service deploy setup tf-output url secret-init secret-smtp
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
 
 # --- Local Development ---
 
@@ -33,27 +33,30 @@ push: ## Push image to Artifact Registry
 
 # --- Terraform ---
 
-init: ## Initialize Terraform
+tf-init: ## Initialize Terraform
 	cd infra && terraform init -backend-config="bucket=$(BUCKET)"
 
-plan: ## Preview infrastructure changes
+tf-plan: ## Preview infrastructure changes
 	cd infra && terraform plan -var="image=$(IMAGE)"
 
-apply: ## Apply infrastructure changes
+tf-apply: ## Apply infrastructure changes
 	cd infra && terraform apply -var="image=$(IMAGE)"
 
-destroy: ## Destroy infrastructure
+tf-destroy: ## Destroy infrastructure
 	cd infra && terraform destroy -var="image=$(IMAGE)"
 
-validate: ## Validate Terraform config
+tf-validate: ## Validate Terraform config
 	cd infra && terraform validate
 
-fmt: ## Format Terraform files
+tf-fmt: ## Format Terraform files
 	cd infra && terraform fmt -recursive
 
 # --- Deployment ---
 
-deploy: build push apply ## Full deploy (build + push + apply)
+update-service: ## Update Cloud Run service image (no Terraform)
+	gcloud run services update redmine --region=$(REGION) --image=$(IMAGE)
+
+deploy: build push update-service ## Deploy app (build + push + update service)
 
 setup: ## Run GCP initial setup
 	./scripts/setup.sh $(PROJECT_ID) $(REGION)
@@ -70,7 +73,7 @@ secret-smtp: ## Register SMTP secrets in Secret Manager
 
 # --- Info ---
 
-output: ## Show Terraform outputs
+tf-output: ## Show Terraform outputs
 	cd infra && terraform output
 
 url: ## Show access URL

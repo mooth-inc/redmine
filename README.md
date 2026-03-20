@@ -29,15 +29,15 @@ make setup PROJECT_ID=<project-id>
 cp infra/terraform.tfvars.example infra/terraform.tfvars
 # Edit infra/terraform.tfvars with your project_id, image, and iap_allowed_members
 
-# 3. Build image and provision infrastructure
-make init PROJECT_ID=<project-id>
-make deploy PROJECT_ID=<project-id>
+# 3. Provision infrastructure (first time only)
+make tf-init PROJECT_ID=<project-id>
+make tf-apply PROJECT_ID=<project-id>
 
 # 4. Register secrets (requires resources created by step 3)
 make secret-init   # Auto-register DB password, secret key, GCS keys
 make secret-smtp   # Register SMTP secrets interactively
 
-# 5. Re-deploy so Cloud Run picks up the secret values
+# 5. Deploy app (build + push + update Cloud Run service)
 make deploy PROJECT_ID=<project-id>
 ```
 
@@ -52,17 +52,18 @@ Run `make help` to list all targets.
 | `make logs` | Tail Redmine container logs |
 | `make build` | Build Docker image |
 | `make push` | Push image to Artifact Registry |
-| `make init` | Initialize Terraform backend |
-| `make plan` | Preview infrastructure changes |
-| `make apply` | Apply infrastructure changes |
-| `make destroy` | Destroy infrastructure |
-| `make validate` | Validate Terraform config |
-| `make fmt` | Format Terraform files |
-| `make deploy` | Full deploy (build + push + apply) |
+| `make tf-init` | Initialize Terraform backend |
+| `make tf-plan` | Preview infrastructure changes |
+| `make tf-apply` | Apply infrastructure changes |
+| `make tf-destroy` | Destroy infrastructure |
+| `make tf-validate` | Validate Terraform config |
+| `make tf-fmt` | Format Terraform files |
+| `make update-service` | Update Cloud Run service image (no Terraform) |
+| `make deploy` | Deploy app (build + push + update service) |
 | `make secret-init` | Auto-register secrets (DB password, secret key, GCS keys) |
 | `make secret-smtp` | Register SMTP secrets in Secret Manager |
 | `make setup` | Run initial GCP setup |
-| `make output` | Show Terraform outputs |
+| `make tf-output` | Show Terraform outputs |
 | `make url` | Show access URL |
 
 Override variables via the command line:
@@ -129,7 +130,7 @@ gcloud run domain-mappings create \
 
 ## Secret Registration
 
-Terraform creates the Secret Manager secret resources, but values must be registered separately. After `make apply`, run:
+Terraform creates the Secret Manager secret resources, but values must be registered separately. After `make tf-apply`, run:
 
 ```bash
 make secret-init   # Auto-register DB password, secret key, GCS keys
@@ -174,15 +175,21 @@ make down   # Stop
 make deploy PROJECT_ID=<project-id>
 ```
 
-This runs `build` → `push` → `apply` in sequence.
+This runs `build` → `push` → `update-service` in sequence (no Terraform).
 
 To run each step individually:
 
 ```bash
 make build PROJECT_ID=<project-id>
 make push  PROJECT_ID=<project-id>
-make plan  PROJECT_ID=<project-id>   # Preview changes
-make apply PROJECT_ID=<project-id>   # Apply changes
+make update-service PROJECT_ID=<project-id>   # Update Cloud Run image
+```
+
+For infrastructure changes, use the Terraform targets:
+
+```bash
+make tf-plan  PROJECT_ID=<project-id>   # Preview changes
+make tf-apply PROJECT_ID=<project-id>   # Apply changes
 ```
 
 ## Cost Estimate
@@ -214,7 +221,7 @@ gcloud run services describe redmine --region=asia-northeast1 --format='value(sp
 ### IAP returns 403
 Verify the user is included in `iap_allowed_members` in `terraform.tfvars` and re-apply:
 ```bash
-make apply PROJECT_ID=<project-id>
+make tf-apply PROJECT_ID=<project-id>
 ```
 
 ### Cold start is slow
