@@ -133,6 +133,10 @@ resource "google_cloud_run_v2_service" "redmine" {
           path = "/"
           port = 3000
         }
+        initial_delay_seconds = 10
+        period_seconds        = 10
+        failure_threshold     = 18
+        timeout_seconds       = 3
       }
     }
   }
