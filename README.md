@@ -104,6 +104,7 @@ iap_allowed_members = [
   "user:alice@example.com",
   "user:bob@example.com",
   "group:team@example.com",
+  "domain:example.com",
 ]
 ```
 

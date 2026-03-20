@@ -52,5 +52,5 @@ variable "iap_support_email" {
 
 variable "iap_allowed_members" {
   type        = list(string)
-  description = "List of IAM members allowed to access Redmine via IAP (e.g. [\"user:alice@example.com\"])"
+  description = "List of IAM members allowed to access Redmine via IAP (e.g. [\"user:alice@example.com\", \"domain:example.com\"])"
 }
