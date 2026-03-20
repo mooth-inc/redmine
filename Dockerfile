@@ -13,6 +13,7 @@ ENV RAILS_ENV=production \
 
 COPY config/database.yml /usr/src/redmine/config/database.yml
 COPY config/configuration.yml /usr/src/redmine/config/configuration.yml
+COPY config/initializers/default_language.rb /usr/src/redmine/config/initializers/default_language.rb
 COPY docker-entrypoint-custom.sh /docker-entrypoint-custom.sh
 RUN chmod +x /docker-entrypoint-custom.sh
 
