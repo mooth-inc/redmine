@@ -22,7 +22,7 @@ resource "google_sql_database_instance" "redmine" {
     }
 
     ip_configuration {
-      ipv4_enabled = false
+      ipv4_enabled = true
     }
   }
 
